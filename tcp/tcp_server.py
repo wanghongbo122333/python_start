@@ -4,76 +4,77 @@
 import socket
 import time
 
+
 ip = '127.0.0.1'
 port = 6677
-server = socket.socket()
-server.bind((ip, port))  # 绑定要监听的端口
-server.listen()  # 监听
+isOK=False
 
-print('组包完成，待发送..')
-# 在这里会形成阻塞,一直等到有客户连接
-# conn就是客户端连过来而在服务器内生成的一个连接实例
-conn, address = server.accept()  # 等电话打进来
-while True:
-    print('电话来了')
-    time.sleep(3)
+while not isOK:
+    server = socket.socket()
+    server.bind((ip, port))  # 绑定要监听的端口
+    server.listen()  # 监听
+
+    print('组包完成，待发送..')
+    # 在这里会形成阻塞,一直等到有客户连接
+    # conn就是客户端连过来而在服务器内生成的一个连接实例
+    conn, address = server.accept()  # 等电话打进来
+    print('准备发送数据：')
+    isOK=True
     try:
-        # data = conn.recv(65536)  # 官方要求最好不要高于8192 - 8k
-        # print(data)
-        msg2 = b'Z\xfd\xa0\x00\x00\x00\x00\x05\x04i\x08\x04\x945\x04i\x08\x04\x945p\x0c\x002VQ@(\x01\xad1\xa495\x01\x02\x00\x00H\x00\x00e\x0540\x01\x1a\xd3\xe6BL\x00\xcf\xa0\x8c4P\x00\xbfF\xc93\x7f\xa4'
+        while True:
+            try:
+                # data = conn.recv(65536)  # 官方要求最好不要高于8192 - 8k
+                # print(data)
+                # conn.send("You have connected to tcp server".encode('utf-8'))
+                ''' 
+                1、特高频模拟数据[3+101]
+                0bc10820f87e(大端) + 0010(2个) + 0(不分片)+ 000（监测） +  0c00-33336340 9701-0c0000-f5280e42 5c8f0342 66660e42 
+                
+                0bc10820f87e200c003333634097010c0000f5280e425c8f034266660e42
+                
+                2、高频电流模拟数据[3+102]
+                8e00084002cc(大端) + 0010(2个) + 0(不分片) + 000（监测） + 0c00-b81e6540 9b01-080000-00005642 66666642
+                
+                8e00084002cc200c00b81e65409b010800000000564266666642
+                
+                3、超声模拟数据[3+103]
+                8e00084004d7(大端) + 0010(2个) + 0(不分片) + 000（监测） + 0c00-ae476140 9f01-100000-cccc0c42 99993742 33335d42 33337742
+                
+                8e00084004d7200c00ae4761409f01100000cccc0c429999374233335d4233337742
+        
+                4、三合一[3+38+103+104]
+                8e00084004da(大端) + 0100(4个) + 0(不分片) + 000（监测） + 0c00-0ad76340/9800-33330f42/9f01-100000-cccc0c42 99993742 33335d42 33337742/a301-030000-99198643 33338f43 cccc4943
+                
+                8e00084004da400c000ad76340980033330f429f01100000cccc0c429999374233335d4233337742a3010c00009919864333338f43cccc4943
+                '''
 
-        mm = bytes.fromhex('0bc10820f87e409800e5bb854161ea042220030065ea040b0b363069ea044b48b2401320')  # 1320
-        mm_cut = mm[:-2]
-        # 切掉2字节msg2的crc校验位
-        msg2 = msg2[:-2]
-        # conn.send("You have connected to tcp server".encode('utf-8'))
+                # 特高频模拟数据
+                str_testhex_low_1 = '0bc10820f87e200c003333634097010c0000f5280e425c8f034266660e42'
+                # 高频电流模拟数据
+                str_testhex_low_2 = '8e00084002cc200c00b81e65409b010800000000564266666642'
+                # 超声模拟数据
+                str_testhex_low_3 = '8e00084004d7200c00ae4761409f01100000cccc0c429999374233335d4233337742'
+                # 三合一
+                str_testhex_low_4 = '8e00084004da400c000ad76340980033330f429f01100000cccc0c429999374233335d4233337742a3010c00009919864333338f43cccc4943'
 
-        # 模拟组包完之后的数据
-        total_data = b'Z\xfd\xa0\x00\x00\x00\x00\x05\x8e\x00\x08@\x02\xb0\x8e\x00\x08@\x02\xb0\x18\x81\x85\xf3\x03A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A' \
-                     b'\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00' \
-                     b'\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00' \
-                     b'\xa0A\x00\x00\xa0A\x00\x00\xa0A\x00\x00\x1bg '
-        # 去掉网络帧头和crc
-        for_lss_decode = total_data[8:-2]
+                conn.send(bytes.fromhex(str_testhex_low_1))
+                print('特高频模拟数据已发送')
+                time.sleep(5)
+                conn.send(bytes.fromhex(str_testhex_low_2))
+                print('高频电流模拟数据已发送')
+                time.sleep(5)
+                conn.send(bytes.fromhex(str_testhex_low_3))
+                print('超声模拟数据已发送')
+                time.sleep(5)
+                conn.send(bytes.fromhex(str_testhex_low_4))
+                print('三合一数据已发送')
+                time.sleep(6)
 
-        conn.send(for_lss_decode)
-        print('sended:', for_lss_decode)
-    except ConnectionResetError:
-        print("disconnect")
-        conn, address = server.accept()  # 等电话打进来
-    # print('receive:', data)
-    # conn.send(data.upper())
-
-server.close()
+            except Exception:
+                print("disconnect")
+                conn, address = server.accept()  # 等电话打进来
+            # print('receive:', data)
+            # conn.send(data.upper())
+    except Exception as e:
+        print(e)
+        server.close()
